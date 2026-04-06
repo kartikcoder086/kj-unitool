@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>UniTool</title>
+
+<style>
+/* RESET */
+*{padding:0;margin:0;box-sizing:border-box;font-family:'Segoe UI',Arial,sans-serif;}
+
+/* MAIN */
+body{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#222;overflow-x:hidden;min-height:100vh;}
+header{
+  background:rgba(255,255,255,0.95);color:#667eea;text-align:center;
+  padding:20px;font-size:26px;font-weight:bold;
+  box-shadow:0 2px 10px rgba(0,0,0,0.1);
+  backdrop-filter:blur(10px);
+}
+
+/* TOOL GRID */
+.tools{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+  gap:18px;padding:25px;max-width:1200px;margin:0 auto;
+}
+.tool{
+  background:white;padding:24px 18px;border-radius:16px;
+  box-shadow:0 6px 20px rgba(0,0,0,0.12);
+  text-align:center;transition:all 0.3s ease;font-size:15px;
+  cursor:pointer;position:relative;overflow:hidden;
+}
+.tool::before{
+  content:'';position:absolute;top:0;left:0;right:0;bottom:0;
+  background:linear-gradient(135deg,#667eea,#764ba2);
+  opacity:0;transition:opacity 0.3s;z-index:0;
+}
+.tool:hover::before{opacity:0.05;}
+.tool:hover{transform:translateY(-8px);box-shadow:0 12px 30px rgba(0,0,0,0.2);}
+.tool-icon{font-size:40px;margin-bottom:12px;position:relative;z-index:1;}
+.tool span{position:relative;z-index:1;font-weight:600;color:#333;}
+
+/* FULL SCREEN TOOL PAGE */
+.page{
+  position:fixed;top:0;left:0;height:100vh;width:100vw;
+  background:linear-gradient(135deg,#f5f7fa 0%,#c3cfe2 100%);
+  display:none;overflow-y:auto;
+  padding:20px;animation:slide 0.3s ease;z-index:100;
+}
+@keyframes slide{from{transform:translateX(100%);} to{transform:translateX(0);}}
+
+.page-content{
+  max-width:600px;margin:0 auto;
+  background:white;padding:30px;border-radius:20px;
+  box-shadow:0 10px 40px rgba(0,0,0,0.15);
+}
+
+/* CLOSE BUTTON */
+.closeBtn{
+  background:linear-gradient(135deg,#667eea,#764ba2);color:white;border:none;
+  padding:12px 24px;border-radius:12px;margin-top:20px;
+  cursor:pointer;font-weight:600;transition:0.3s;
+  box-shadow:0 4px 15px rgba(102,126,234,0.3);
+}
+.closeBtn:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(102,126,234,0.4);}
+
+/* INPUTS */
+input,textarea,select{
+  width:100%;padding:14px;margin-top:14px;
+  border-radius:12px;border:2px solid #e0e0e0;
+  font-size:15px;transition:0.3s;
+}
+input:focus,textarea:focus,select:focus{
+  outline:none;border-color:#667eea;
+  box-shadow:0 0 0 3px rgba(102,126,234,0.1);
+}
+button:not(.closeBtn){
+  padding:14px 20px;
+  background:linear-gradient(135deg,#667eea,#764ba2);
+  color:white;border:none;border-radius:12px;
+  margin-top:14px;cursor:pointer;font-weight:600;
+  transition:0.3s;box-shadow:0 4px 15px rgba(102,126,234,0.3);
+}
+button:not(.closeBtn):hover{
+  transform:translateY(-2px);
+  box-shadow:0 6px 20px rgba(102,126,234,0.4);
+}
+
+#videoMirror{width:100%;border-radius:16px;margin-top:20px;box-shadow:0 4px 15px rgba(0,0,0,0.1);}
+
+/* CALCULATOR GRID */
+.calc-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:20px;}
+.calc-btn{padding:20px;font-size:20px;border-radius:10px;}
+
+/* TODO ITEMS */
+#todoList{list-style:none;margin-top:20px;}
+#todoList li{
+  background:#f5f5f5;padding:15px;margin:10px 0;
+  border-radius:10px;cursor:pointer;transition:0.3s;
+  display:flex;justify-content:space-between;align-items:center;
+}
+#todoList li:hover{background:#ffe0e0;}
+
+/* STOPWATCH/TIMER DISPLAY */
+.time-display{
+  font-size:56px;font-weight:bold;
+  color:#667eea;margin:30px 0;text-align:center;
+  font-family:'Courier New',monospace;
+}
+  
+  /*ad */
+  .ad{
+    margin-top:10px;
+  }
+  #popupad{
+    margin-left:20px;
+
+/* RESULT TEXT */
+.result{
+  margin-top:20px;padding:15px;
+  background:#f0f4ff;border-radius:10px;
+  font-size:18px;font-weight:600;color:#667eea;
+  text-align:center;word-break:break-all;
+}
+
+h2{color:#667eea;margin-bottom:10px;}
+</style>
+</head>
+<body>
+
+<header>🛠️ UniTool</header>
+
+<!-- HOME GRID -->
+<div class="tools">
+  <div class="tool" onclick="openPage('scanner')"><div class="tool-icon">📄</div><span>Scanner</span></div>
+  <div class="tool" onclick="openPage('qr')"><div class="tool-icon">🔳</div><span>QR Generator</span></div>
+  <div class="tool" onclick="openPage('notes')"><div class="tool-icon">📝</div><span>Notes</span></div>
+  <div class="tool" onclick="openPage('calc')"><div class="tool-icon">🧮</div><span>Calculator</span></div>
+  <div class="tool" onclick="openPage('converter')"><div class="tool-icon">🔁</div><span>Converter</span></div>
+  <div class="tool" onclick="openPage('stopwatch')"><div class="tool-icon">⏱️</div><span>Stopwatch</span></div>
+  <div class="tool" onclick="openPage('timer')"><div class="tool-icon">⏲️</div><span>Timer</span></div>
+  <div class="tool" onclick="openPage('todo')"><div class="tool-icon">📌</div><span>To-Do</span></div>
+  <div class="tool" onclick="openPage('password')"><div class="tool-icon">🔐</div><span>Password</span></div>
+  <div class="tool" onclick="openPage('passcheck')"><div class="tool-icon">🛡️</div><span>Password Checker</span></div>
+  <div class="tool" onclick="openPage('temp')"><div class="tool-icon">🌡️</div><span>Temperature</span></div>
+  <div class="tool" onclick="openPage('mirror')"><div class="tool-icon">📷</div><span>Mirror</span></div>
+  <div class="tool" onclick="openPage('clock')"><div class="tool-icon">🕒</div><span>Clock</span></div>
+</div>
+
+<!-- ===================== FULL SCREEN PAGES ===================== -->
+
+<!-- SCANNER PAGE -->
+<div class="page" id="scanner">
+  <div class="page-content">
+    <h2>📄 Document Scanner</h2>
+    <p>Capture a document photo</p>
+    <input type="file" accept="image/*" capture="environment" onchange="previewImage(this)">
+    <div id="scanPreview" style="margin-top:20px;text-align:center;"></div>
+    <button class="closeBtn" onclick="closePage('scanner')">Close</button>
+  </div>
+  <div class="ad">
+  <script>
+  atOptions = {
+    'key' : 'fbdb847d101c31c06c8c6e67737a0cc6',
+    'format' : 'iframe',
+    'height' : 50,
+    'width' : 320,
+    'params' : {}
+  };
+</script>
+<script src="https://www.highperformanceformat.com/fbdb847d101c31c06c8c6e67737a0cc6/invoke.js"></script>
+  </div>
+  
+</div>
+
+<!-- QR GENERATOR -->
+<div class="page" id="qr">
+  <div class="page-content">
+    <h2>🔳 QR Code Generator</h2>
+    <input id="qrText" placeholder="Enter text or URL">
+    <button onclick="generateQR()">Generate QR Code</button>
+    <div id="qrOutput" style="margin-top:20px;text-align:center;"></div>
+    <button class="closeBtn" onclick="closePage('qr')">Close</button>
+  </div>
+  <div class="ad">
+  <script>
+  atOptions = {
+    'key' : 'fbdb847d101c31c06c8c6e67737a0cc6',
+    'format' : 'iframe',
+    'height' : 50,
+    'width' : 320,
+    'params' : {}
+  };
+</script>
+<script src="https://www.highperformanceformat.com/fbdb847d101c31c06c8c6e67737a0cc6/invoke.js"></script>
+    </div>
+</div>
+
+<!-- NOTES -->
+<div class="page" id="notes">
+  <div class="page-content">
+    <h2>📝 Notes</h2>
+    <textarea id="noteText" placeholder="Write your notes here..." rows="8"></textarea>
+    <button onclick="saveNote()">💾 Save Note</button>
+    <div id="savedMsg" class="result" style="display:none;"></div>
+    <button class="closeBtn" onclick="closePage('notes')">Close</button>
+  </div>
+  <div class="ad">
+  <script>
+  atOptions = {
+    'key' : 'fbdb847d101c31c06c8c6e67737a0cc6',
+    'format' : 'iframe',
+    'height' : 50,
+    'width' : 320,
+    'params' : {}
+  };
+</script>
+<script src="https://www.highperformanceformat.com/fbdb847d101c31c06c8c6e67737a0cc6/invoke.js"></script>
+    </div>
+</div>
+
+<!-- CALCULATOR -->
+<div class="page" id="calc">
+  <div class="page-content">
+    <h2>🧮 Calculator</h2>
+    <input id="calcDisplay" placeholder="0" readonly style="font-size:24px;text-align:right;">
+    <div class="calc-grid">
+      <button class="calc-btn" onclick="calcAppend('7')">7</button>
+      <button class="calc-btn" onclick="calcAppend('8')">8</button>
+      <button class="calc-btn" onclick="calcAppend('9')">9</button>
+      <button class="calc-btn" onclick="calcAppend('/')">/</button>
+      <button class="calc-btn" onclick="calcAppend('4')">4</button>
+      <button class="calc-btn" onclick="calcAppend('5')">5</button>
+      <button class="calc-btn" onclick="calcAppend('6')">6</button>
+      <button class="calc-btn" onclick="calcAppend('*')">×</button>
+      <button class="calc-btn" onclick="calcAppend('1')">1</button>
+      <button class="calc-btn" onclick="calcAppend('2')">2</button>
+      <button class="calc-btn" onclick="calcAppend('3')">3</button>
+      <button class="calc-btn" onclick="calcAppend('-')">−</button>
+      <button class="calc-btn" onclick="calcAppend('0')">0</button>
+      <button class="calc-btn" onclick="calcAppend('.')">.</button>
+      <button class="calc-btn" onclick="calcEqual()">=</button>
+      <button class="calc-btn" onclick="calcAppend('+')">+</button>
+    </div>
+    <button onclick="calcClear()" style="width:100%;margin-top:10px;">Clear</button>
+    <button class="closeBtn" onclick="closePage('calc')">Close</button>
+  </div>
+  <div class="ad">
+  <script>
+  atOptions = {
+    'key' : 'fbdb847d101c31c06c8c6e67737a0cc6',
+    'format' : 'iframe',
+    'height' : 50,
+    'width' : 320,
+    'params' : {}
+  };
+</script>
+<script src="https://www.highperformanceformat.com/fbdb847d101c31c06c8c6e67737a0cc6/invoke.js"></script>
+  </div>
+</div>
+
+<!-- UNIT CONVERTER -->
+<div class="page" id="converter">
+  <div class="page-content">
+    <h2>🔁 Unit Converter</h2>
+    <select id="unitType">
+      <option value="km-m">Kilometer → Meter</option>
+      <option value="m-km">Meter → Kilometer</option>
+      <option value="kg-g">Kilogram → Gram</option>
+      <option value="g-kg">Gram → Kilogram</option>
+      <option value="mi-km">Mile → Kilometer</option>
+      <option value="km-mi">Kilometer → Mile</option>
+    </select>
+    <input id="unitInput" placeholder="Enter value" type="number">
+    <button onclick="convertUnit()">Convert</button>
+    <div id="unitResult" class="result" style="display:none;"></div>
+    <button class="closeBtn" onclick="closePage('converter')">Close</button>
+  </div>
+  <div class="ad">
+  <script>
+  atOptions = {
+    'key' : 'fbdb847d101c31c06c8c6e67737a0cc6',
+    'format' : 'iframe',
+    'height' : 50,
+    'width' : 320,
+    'params' : {}
+  };
+</script>
+<script src="https://www.highperformanceformat.com/fbdb847d101c31c06c8c6e67737a0cc6/invoke.js"></script>
+  </div>
+</div>
+
+
+<!-- STOPWATCH -->
+<div class="page" id="stopwatch">
+  <div class="page-content">
+    <h2>⏱️ Stopwatch</h2>
+    <div class="time-display" id="swTime">00:00:00</div>
+    <button onclick="startSW()">▶️ Start</button>
+    <button onclick="stopSW()">⏸️ Stop</button>
+    <button onclick="resetSW()">🔄 Reset</button>
+    <button class="closeBtn" onclick="closePage('stopwatch')">Close</button>
+  </div>
+  <div class="ad">
+  <script>
+  atOptions = {
+    'key' : 'fbdb847d101c31c06c8c6e67737a0cc6',
+    'format' : 'iframe',
+    'height' : 50,
+    'width' : 320,
+    'params' : {}
+  };
+</script>
+<script src="https://www.highperformanceformat.com/fbdb847d101c31c06c8c6e67737a0cc6/invoke.js"></script>
+  </div>
+</div>
+
+<!-- TIMER -->
+<div class="page" id="timer">
+  <div class="page-content">
+    <h2>⏲️ Timer</h2>
+    <input id="timerSec" placeholder="Enter seconds" type="number">
+    <div class="time-display" id="timerDisplay"></div>
+    <button onclick="startTimer()">Start Timer</button>
+    <button class="closeBtn" onclick="closePage('timer')">Close</button>
+  </div>
+  <div class="ad">
+  <script>
+  atOptions = {
+    'key' : 'fbdb847d101c31c06c8c6e67737a0cc6',
+    'format' : 'iframe',
+    'height' : 50,
+    'width' : 320,
+    'params' : {}
+  };
+</script>
+<script src="https://www.highperformanceformat.com/fbdb847d101c31c06c8c6e67737a0cc6/invoke.js"></script>
+  </div>
+</div>
+
+<!-- TODO LIST -->
+<div class="page" id="todo">
+  <div class="page-content">
+    <h2>📌 To-Do List</h2>
+    <input id="todoInput" placeholder="Add a new task">
+    <button onclick="addTodo()">➕ Add Task</button>
+    <ul id="todoList"></ul>
+    <button class="closeBtn" onclick="closePage('todo')">Close</button>
+  </div>
+  <div class="ad">
+  <script>
+  atOptions = {
+    'key' : 'fbdb847d101c31c06c8c6e67737a0cc6',
+    'format' : 'iframe',
+    'height' : 50,
+    'width' : 320,
+    'params' : {}
+  };
+</script>
+<script src="https://www.highperformanceformat.com/fbdb847d101c31c06c8c6e67737a0cc6/invoke.js"></script>
+  </div>
+</div>
+
+<!-- PASSWORD GENERATOR -->
+<div class="page" id="password">
+  <div class="page-content">
+    <h2>🔐 Password Generator</h2>
+    <input id="passLen" placeholder="Length (8-32)" type="number" value="16">
+    <label style="display:block;margin-top:15px;">
+      <input type="checkbox" id="passSymbols" checked> Include symbols
+    </label>
+    <label style="display:block;margin-top:10px;">
+      <input type="checkbox" id="passNumbers" checked> Include numbers
+    </label>
+    <button onclick="genPass()">Generate Password</button>
+    <div id="passResult" class="result" style="display:none;"></div>
+    <button onclick="copyPass()" id="copyBtn" style="display:none;">📋 Copy</button>
+    <button class="closeBtn" onclick="closePage('password')">Close</button>
+  </div>
+  <div class="ad">
+  <script>
+  atOptions = {
+    'key' : 'fbdb847d101c31c06c8c6e67737a0cc6',
+    'format' : 'iframe',
+    'height' : 50,
+    'width' : 320,
+    'params' : {}
+  };
+</script>
+<script src="https://www.highperformanceformat.com/fbdb847d101c31c06c8c6e67737a0cc6/invoke.js"></script>
+  </div>
+</div>
+  
+  <!-- PASSWORD CHECKER -->
+<div class="page" id="passcheck">
+  <div class="page-content">
+    <h2>🛡️ Password Strength Checker</h2>
+
+    <input id="checkPassword" type="text" placeholder="Enter your password" oninput="checkPasswordStrength()">
+
+<div style="margin-top:15px;background:#eee;border-radius:10px;height:12px;">
+  <div id="strengthBar" style="height:12px;width:0%;border-radius:10px;background:red;"></div>
+</div>
+
+    <button onclick="checkPasswordStrength()">Check Strength</button>
+
+    <div id="passStrengthResult" class="result" style="display:none;"></div>
+    <div id="hackSim" style="
+margin-top:15px;
+font-family:monospace;
+background:#000;
+color:#00ff00;
+padding:10px;
+border-radius:8px;
+display:none;
+font-size:14px;">
+</div>
+
+    <button class="closeBtn" onclick="closePage('passcheck')">Close</button>
+  </div>
+  <div class="ad">
+  <script>
+  atOptions = {
+    'key' : 'fbdb847d101c31c06c8c6e67737a0cc6',
+    'format' : 'iframe',
+    'height' : 50,
+    'width' : 320,
+    'params' : {}
+  };
+</script>
+<script src="https://www.highperformanceformat.com/fbdb847d101c31c06c8c6e67737a0cc6/invoke.js"></script>
+  </div>
+</div>
+
+<!-- TEMPERATURE -->
+<div class="page" id="temp">
+  <div class="page-content">
+    <h2>🌡️ Temperature Converter</h2>
+    <select id="tempType">
+      <option value="c-f">Celsius → Fahrenheit</option>
+      <option value="f-c">Fahrenheit → Celsius</option>
+      <option value="c-k">Celsius → Kelvin</option>
+      <option value="k-c">Kelvin → Celsius</option>
+    </select>
+    <input id="tempVal" placeholder="Enter temperature" type="number">
+    <button onclick="convertTemp()">Convert</button>
+    <div id="tempResult" class="result" style="display:none;"></div>
+    <button class="closeBtn" onclick="closePage('temp')">Close</button>
+  </div>
+  <div class="ad">
+  <script>
+  atOptions = {
+    'key' : 'fbdb847d101c31c06c8c6e67737a0cc6',
+    'format' : 'iframe',
+    'height' : 50,
+    'width' : 320,
+    'params' : {}
+  };
+</script>
+<script src="https://www.highperformanceformat.com/fbdb847d101c31c06c8c6e67737a0cc6/invoke.js"></script>
+  </div>
+</div>
+
+<!-- MIRROR -->
+<div class="page" id="mirror">
+  <div class="page-content">
+    <h2>📷 Mirror</h2>
+    <video id="videoMirror" autoplay playsinline style="transform:scaleX(-1);"></video>
+    <button onclick="startMirror()">Start Camera</button>
+    <button onclick="stopMirror()">Stop Camera</button>
+    <button class="closeBtn" onclick="closePage('mirror')">Close</button>
+  </div>
+  <div class="ad">
+  <script>
+  atOptions = {
+    'key' : 'fbdb847d101c31c06c8c6e67737a0cc6',
+    'format' : 'iframe',
+    'height' : 50,
+    'width' : 320,
+    'params' : {}
+  };
+</script>
+<script src="https://www.highperformanceformat.com/fbdb847d101c31c06c8c6e67737a0cc6/invoke.js"></script>
+  </div>
+</div>
+
+<!-- CLOCK -->
+<div class="page" id="clock">
+  <div class="page-content">
+    <h2>🕒 Clock</h2>
+    <div class="time-display" id="clockTime"></div>
+    <div id="clockDate" style="text-align:center;font-size:20px;color:#666;margin-top:10px;"></div>
+    <button class="closeBtn" onclick="closePage('clock')">Close</button>
+  </div>
+  <div class="ad">
+  <script>
+  atOptions = {
+    'key' : 'fbdb847d101c31c06c8c6e67737a0cc6',
+    'format' : 'iframe',
+    'height' : 50,
+    'width' : 320,
+    'params' : {}
+  };
+</script>
+<script src="https://www.highperformanceformat.com/fbdb847d101c31c06c8c6e67737a0cc6/invoke.js"></script>
+  </div>
+</div>
+
+<script>
+/* ==================== OPEN/CLOSE FULL PAGES ==================== */
+function openPage(id){
+  document.getElementById(id).style.display="block";
+  if(id==="notes")loadNote();
+  if(id==="clock")updateClock();
+  if(id==="todo")loadTodos();
+}
+function closePage(id){
+  document.getElementById(id).style.display="none";
+  if(id==="mirror")stopMirror();
+}
+
+/* ==================== SCANNER ==================== */
+function previewImage(input){
+  if(input.files && input.files[0]){
+    let reader=new FileReader();
+    reader.onload=function(e){
+      document.getElementById("scanPreview").innerHTML=
+        `<img src="${e.target.result}" style="max-width:100%;border-radius:12px;box-shadow:0 4px 15px rgba(0,0,0,0.1);">`;
+    };
+    reader.readAsDataURL(input.files[0]);
+  }
+}
+
+/* ==================== QR ==================== */
+function generateQR(){
+  let text=document.getElementById("qrText").value;
+  if(!text){alert("Please enter text");return;}
+  document.getElementById("qrOutput").innerHTML=
+    `<img src='https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(text)}' style="border-radius:12px;box-shadow:0 4px 15px rgba(0,0,0,0.1);">`;
+}
+
+/* ==================== NOTES ==================== */
+function saveNote(){
+  let t=document.getElementById("noteText").value;
+  localStorage.setItem("note",t);
+  let msg=document.getElementById("savedMsg");
+  msg.innerText="✅ Note saved successfully!";
+  msg.style.display="block";
+  setTimeout(()=>msg.style.display="none",3000);
+}
+function loadNote(){
+  let saved=localStorage.getItem("note");
+  if(saved)document.getElementById("noteText").value=saved;
+}
+
+/* ==================== CALCULATOR ==================== */
+function calcAppend(val){
+  document.getElementById("calcDisplay").value+=val;
+}
+function calcEqual(){
+  try{
+    let result=eval(document.getElementById("calcDisplay").value);
+    document.getElementById("calcDisplay").value=result;
+  }catch(e){
+    alert("Invalid expression");
+  }
+}
+function calcClear(){
+  document.getElementById("calcDisplay").value="";
+}
+
+/* ==================== UNIT CONVERTER ==================== */
+function convertUnit(){
+  let type=document.getElementById("unitType").value;
+  let v=parseFloat(document.getElementById("unitInput").value);
+  if(isNaN(v)){alert("Enter valid number");return;}
+  let r,unit;
+  switch(type){
+    case "km-m": r=v*1000;unit="meters";break;
+    case "m-km": r=v/1000;unit="kilometers";break;
+    case "kg-g": r=v*1000;unit="grams";break;
+    case "g-kg": r=v/1000;unit="kilograms";break;
+    case "mi-km": r=v*1.60934;unit="kilometers";break;
+    case "km-mi": r=v/1.60934;unit="miles";break;
+  }
+  let result=document.getElementById("unitResult");
+  result.innerText=`Result: ${r.toFixed(4)} ${unit}`;
+  result.style.display="block";
+}
+
+/* ==================== STOPWATCH ==================== */
+let sw=0,swInt;
+function startSW(){
+  if(swInt)return;
+  swInt=setInterval(()=>{
+    sw++;
+    let h=Math.floor(sw/3600);
+    let m=Math.floor((sw%3600)/60);
+    let s=sw%60;
+    document.getElementById("swTime").innerText=
+      `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+  },1000);
+}
+function stopSW(){
+  clearInterval(swInt);
+  swInt=null;
+}
+function resetSW(){
+  stopSW();
+  sw=0;
+  document.getElementById("swTime").innerText="00:00:00";
+}
+
+/* ==================== TIMER ==================== */
+let timerInt;
+function startTimer(){
+  if(timerInt) clearInterval(timerInt);
+
+  let sec = parseInt(document.getElementById("timerSec").value);
+  if(isNaN(sec) || sec <= 0){
+    alert("Enter valid seconds");
+    return;
+  }
+
+  let display = document.getElementById("timerDisplay");
+
+  timerInt = setInterval(() => {
+    display.innerText = sec + " seconds";
+    sec--;
+
+    if(sec < 0){
+      clearInterval(timerInt);
+      display.innerText = "Time's Up!";
+      showTimerPopup();
+    }
+  }, 1000);
+}
+/* ==================== TODO ==================== */
+let todos=[];
+function addTodo(){
+  let t=document.getElementById("todoInput").value.trim();
+  if(!t)return;
+  todos.push(t);
+  saveTodos();
+  renderTodos();
+  document.getElementById("todoInput").value="";
+}
+function removeTodo(idx){
+  todos.splice(idx,1);
+  saveTodos();
+  renderTodos();
+}
+function renderTodos(){
+  let list=document.getElementById("todoList");
+  list.innerHTML="";
+  todos.forEach((todo,i)=>{
+    let li=document.createElement("li");
+    li.innerHTML=`<span>${todo}</span><button onclick="removeTodo(${i})" style="background:#ff4444;padding:8px 12px;margin:0;">Delete</button>`;
+    list.appendChild(li);
+  });
+}
+function saveTodos(){
+  localStorage.setItem("todos",JSON.stringify(todos));
+}
+function loadTodos(){
+  let saved=localStorage.getItem("todos");
+  if(saved){
+    todos=JSON.parse(saved);
+    renderTodos();
+  }
+}
+
+/* ==================== PASSWORD ==================== */
+function genPass(){
+  let len=parseInt(document.getElementById("passLen").value);
+  if(isNaN(len)||len<8||len>32){alert("Length should be 8-32");return;}
+  let chars="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+  if(document.getElementById("passNumbers").checked)chars+="0123456789";
+  if(document.getElementById("passSymbols").checked)chars+="!@#$%^&*";
+  let pass="";
+  for(let i=0;i<len;i++){pass+=chars.charAt(Math.floor(Math.random()*chars.length));}
+  document.getElementById("passResult").innerText=pass;
+  document.getElementById("passResult").style.display="block";
+  document.getElementById("copyBtn").style.display="inline-block";
+}
+function copyPass(){
+  let text=document.getElementById("passResult").innerText;
+  navigator.clipboard.writeText(text).then(()=>alert("Copied to clipboard!"));
+}
+  
+  /* ==================== ADVANCED PASSWORD CHECKER ==================== */
+function checkPasswordStrength(){
+
+  let pass = document.getElementById("checkPassword").value;
+
+  if(pass.length === 0){
+    document.getElementById("passStrengthResult").style.display="none";
+    return;
+  }
+
+  let result = zxcvbn(pass);
+
+  let strengthText = "";
+  let color = "";
+  let width = 0;
+
+  switch(result.score){
+    case 0:
+      strengthText="Too Weak ❌";
+      color="red";
+      width=20;
+      break;
+
+    case 1:
+      strengthText="Weak ⚠️";
+      color="orange";
+      width=40;
+      break;
+
+    case 2:
+      strengthText="Medium 🟡";
+      color="gold";
+      width=60;
+      break;
+
+    case 3:
+      strengthText="Strong 🟢";
+      color="limegreen";
+      width=80;
+      break;
+
+    case 4:
+      strengthText="Very Strong 🔒";
+      color="green";
+      width=100;
+      break;
+  }
+
+  let crackTime = result.crack_times_display.offline_slow_hashing_1e4_per_second;
+
+  let output=document.getElementById("passStrengthResult");
+
+  output.innerHTML=
+  "Strength: <b style='color:"+color+"'>"+strengthText+"</b><br><br>"+
+  "Estimated Crack Time:<br>"+crackTime;
+
+  output.style.display="block";
+
+  /* strength bar */
+  let bar=document.getElementById("strengthBar");
+  bar.style.width=width+"%";
+  bar.style.background=color;
+
+  /* hacker simulation */
+  let hack=document.getElementById("hackSim");
+  hack.style.display="block";
+  hack.innerText="Simulating password cracking...\n";
+
+  setTimeout(()=>{
+    hack.innerText += "Running brute force...\n";
+  },500);
+
+  setTimeout(()=>{
+    hack.innerText += "Checking dictionary attacks...\n";
+  },1000);
+
+  setTimeout(()=>{
+    hack.innerText += "Estimated crack time: "+crackTime;
+  },1500);
+
+}
+ 
+
+/* ==================== TEMP ==================== */
+function convertTemp(){
+  let type=document.getElementById("tempType").value;
+  let v=parseFloat(document.getElementById("tempVal").value);
+  if(isNaN(v)){alert("Enter valid number");return;}
+  let r,unit;
+  switch(type){
+    case "c-f": r=(v*9/5)+32;unit="°F";break;
+    case "f-c": r=(v-32)*5/9;unit="°C";break;
+    case "c-k": r=v+273.15;unit="K";break;
+    case "k-c": r=v-273.15;unit="°C";break;
+  }
+  let result=document.getElementById("tempResult");
+  result.innerText=`Result: ${r.toFixed(2)} ${unit}`;
+  result.style.display="block";
+}
+
+/* ==================== MIRROR ==================== */
+let mirrorStream;
+function startMirror(){
+  navigator.mediaDevices.getUserMedia({video:{facingMode:"user"}})
+  .then(stream=>{
+    mirrorStream=stream;
+    document.getElementById("videoMirror").srcObject=stream;
+  })
+  .catch(err=>alert("Camera access denied"));
+}
+function stopMirror(){
+  if(mirrorStream){
+    mirrorStream.getTracks().forEach(track=>track.stop());
+    document.getElementById("videoMirror").srcObject=null;
+  }
+}
+
+/* ==================== CLOCK ==================== */
+function updateClock(){
+  let now=new Date();
+  document.getElementById("clockTime").innerText=now.toLocaleTimeString();
+  document.getElementById("clockDate").innerText=now.toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+}
+setInterval(updateClock,1000);
+  function showTimerPopup(){
+  document.getElementById("timerPopup").style.display = "flex";
+}
+
+function closeTimerPopup(){
+  document.getElementById("timerPopup").style.display = "none";
+}
+</script>
+
+  <!-- TIMER FINISHED POPUP -->
+<div id="timerPopup" style="
+  display:none;
+  position:fixed;
+  top:0; left:0;
+  width:100%; height:100%;
+  background:rgba(0,0,0,0.7);
+  z-index:9999;
+  justify-content:center;
+  align-items:center;
+">
+
+  <div style="
+    background:white;
+    padding:20px;
+    border-radius:15px;
+    text-align:center;
+    width:90%;
+    max-width:350px;
+  ">
+    <h2>⏰ Time's Up!</h2>
+    <p>Your timer has finished.</p>
+
+    <!-- AD AREA -->
+    <div class="ad" id="popupad"style="margin:15px 0;">
+      <script>
+  atOptions = {
+    'key' : '32bf2ada513a8c0d90d0918d445040c5',
+    'format' : 'iframe',
+    'height' : 250,
+    'width' : 300,
+    'params' : {}
+  };
+</script>
+<script src="https://www.highperformanceformat.com/32bf2ada513a8c0d90d0918d445040c5/invoke.js"></script>
+    </div>
+
+    <button onclick="closeTimerPopup()" 
+      style="padding:12px 20px;border:none;background:#667eea;color:white;border-radius:10px;">
+      Close
+    </button>
+  </div>
+</div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/zxcvbn/4.4.2/zxcvbn.js"></script>
+</body>
+</html>
